@@ -35,6 +35,10 @@ Action ComportamientoJugador::think(Sensores sensores){
 	cout << endl;
 
 
+
+
+			// prueba
+
 	// Determinar el efecto de la ultima accion enviada
 	return accion;
 }
