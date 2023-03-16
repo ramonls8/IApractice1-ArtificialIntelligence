@@ -37,7 +37,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 
 
-			// prueba de github, comentario
+			// prueba de github, comentario 
 
 	// Determinar el efecto de la ultima accion enviada
 	return accion;
