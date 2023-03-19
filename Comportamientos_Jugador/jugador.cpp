@@ -8,6 +8,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	Action accion = actIDLE;
 
+	// Info debug
 	cout << "Posicion: fila " << sensores.posF << " columna " << sensores.posC << " ";
 	switch(sensores.sentido){
 		case 0: cout << "Norte" << endl; break;
@@ -35,11 +36,11 @@ Action ComportamientoJugador::think(Sensores sensores){
 	cout << endl;
 
 
-
-
-			// prueba
-
 	// Determinar el efecto de la ultima accion enviada
+	switch(last_action){
+		
+	}
+
 	return accion;
 }
 
