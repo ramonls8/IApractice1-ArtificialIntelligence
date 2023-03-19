@@ -14,8 +14,8 @@ class ComportamientoJugador : public Comportamiento{
   public:
     ComportamientoJugador(unsigned int size) : Comportamiento(size){
       // Constructor de la clase
-      current_state.fil = current_state.col = 99;
-      current_state.brujula = norte;
+      st.fil = st.col = 99;
+      st.brujula = norte;
       last_action = actIDLE;
     }
 
@@ -27,8 +27,12 @@ class ComportamientoJugador : public Comportamiento{
 
   private:
     // Variables de estado
-    state current_state;
+    state st;
     Action last_action;
+    bool bien_situado = true;
+
+    // Informa de la posición actual
+    void ShowInfo(const Sensores &sensores);
 
 };
 
