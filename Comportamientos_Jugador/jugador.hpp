@@ -37,10 +37,24 @@ class ComportamientoJugador : public Comportamiento{
     Action last_action;
     bool wellLocated = false;
     vector<vector<unsigned char>> mapaAuxiliar;
+    bool wearingBikini = false;
+    bool wearingShoes = false;
 
+    const unsigned int LOW_COST = 20;
+
+
+    // Calcula y devuelve una vista del mapa para un estado concreto
+    // que no tiene por qué ser el actual
+    vector<unsigned char> GetCertainView(state certainSt, vector<vector<unsigned char>> &map);
+
+    // Guarda la vista actual en el mapa
+    void SaveActualView(const vector<unsigned char> &view, vector<vector<unsigned char>> &map);
+
+    // Rellena todos los valores de una matriz con el carácter c
+    void ResetCharMatrix(vector<vector<unsigned char>> &matrix, char c);
 
     // Devuelve el estado a los valores por defecto
-    bool ResetState(unsigned int size);
+    void ResetState(unsigned int size);
 
     // Devuelve si el sensor funciona y puede conocer la posición
     bool SensorIsWorking(const Sensores &sensores);
@@ -51,7 +65,17 @@ class ComportamientoJugador : public Comportamiento{
     // Actualiza state tras la última acción
     void UpdateState(const Sensores &sensores);
 
+    // Pasa los datos del mapa temporal al mapa resultado cuando
+    // el personaje se ubica
+    void TransferMap(const Sensores &sensores);
 
+    // Devuelve true si puede avanzar hacia delante
+    bool CanMoveForward(const Sensores &sensores);
+
+    // Calcula el coste que tendrá una acción en el futuro o en este turno,
+    // es decir, si se mueve, el coste de la casilla donde llegue, si gira,
+    // el coste de girar en la casilla en la que lo hace
+    int CostOfAction(const Sensores &sensores, Action action);
 };
 
 #endif

@@ -3,16 +3,156 @@
 using namespace std;
 
 //////////////////////////////////////////////////////////
-// Funciones
+// Métodos privados
 //////////////////////////////////////////////////////////
 
-// Guarda la vista actual en el mapa
-void SaveView(vector<unsigned char> &view, const state &st, vector<vector<unsigned char>> &map){
-	map[st.fil][st.col] = view[0];
+vector<unsigned char> ComportamientoJugador::GetCertainView(state s, vector<vector<unsigned char>> &map){
+	// Desplazamiento de filas y columnas cuando nos movemos hacia delante, izq y der
+	pair<unsigned int, unsigned int> front, right, left;
+	front.first = front.second = right.first = right.second = left.first = left.second = 0;
+
+	switch(st.brujula){
+		case norte:
+			// Si nos movemos hacia delante mirando al norte, baja una fila y la columna no cambia
+			front.first = -1;
+			left.second = -1;
+			right.second = 1;
+			break;
+		case sur:
+			front.first = 1;
+			left.second = 1;
+			right.second = -1;
+			break;
+		case este:
+			front.second = 1;
+			left.first = -1;
+			right.first = 1;
+			break;
+		case oeste:
+			front.second = -1;
+			left.first = 1;
+			right.first = -1;
+			break;
+		case noreste:
+			front.first = -1;	front.second = 1;
+			left.second = -1;
+			right.first = 1;
+			break;
+		case suroeste:
+			front.first = 1;	front.second = -1;
+			left.second = 1;
+			right.first = -1;
+			break;
+		case noroeste:
+			front.first = -1;	front.second = -1;
+			left.first = 1;
+			right.second = 1;
+			break;
+		case sureste:
+			front.first = 1;	front.second = 1;
+			left.first = -1;
+			right.second = -1;
+			break;
+	}
+
+	// Vector para escribir las casillas
+	vector<unsigned char> view;
+	view.reserve(16);
+
+	// Escritura de casillas
+	view[0 ] = map[s.fil][st.col];
+	view[1 ] = map[s.fil + front.first + left.first ][s.col + front.second + left.second ];
+	view[2 ] = map[s.fil + front.first              ][s.col + front.second               ]; // Ej: La pos 2 se consigue con 1 mov hacia delante
+	view[3 ] = map[s.fil + front.first + right.first][s.col + front.second + right.second];
+
+	view[4 ] = map[s.fil + 2*front.first + 2*left.first ][s.col + 2*front.second + 2*left.second ];
+	view[5 ] = map[s.fil + 2*front.first + 1*left.first ][s.col + 2*front.second + 1*left.second ];
+	view[6 ] = map[s.fil + 2*front.first                ][s.col + 2*front.second                 ];
+	view[7 ] = map[s.fil + 2*front.first + 1*right.first][s.col + 2*front.second + 1*right.second];
+	view[8 ] = map[s.fil + 2*front.first + 2*right.first][s.col + 2*front.second + 2*right.second];
+
+	view[9 ] = map[s.fil + 3*front.first + 3*left.first ][s.col + 3*front.second + 3*left.second ];
+	view[10] = map[s.fil + 3*front.first + 2*left.first ][s.col + 3*front.second + 2*left.second ];
+	view[11] = map[s.fil + 3*front.first + 1*left.first ][s.col + 3*front.second + 1*left.second ];
+	view[12] = map[s.fil + 3*front.first                ][s.col + 3*front.second                 ];
+	view[13] = map[s.fil + 3*front.first + 1*right.first][s.col + 3*front.second + 1*right.second];
+	view[14] = map[s.fil + 3*front.first + 2*right.first][s.col + 3*front.second + 2*right.second];
+	view[15] = map[s.fil + 3*front.first + 3*right.first][s.col + 3*front.second + 3*right.second];
+
+	return view;
 }
 
-// Rellena todos los valores de una matriz con el carácter c
-void ResetCharMatrix(vector<vector<unsigned char>> &matrix, char c = '?'){
+void ComportamientoJugador::SaveActualView(const vector<unsigned char> &view, vector<vector<unsigned char>> &map){
+	// Desplazamiento de filas y columnas cuando nos movemos hacia delante, izq y der
+	pair<unsigned int, unsigned int> front, right, left;
+	front.first = front.second = right.first = right.second = left.first = left.second = 0;
+
+	switch(st.brujula){
+		case norte:
+			// Si nos movemos hacia delante mirando al norte, baja una fila y la columna no cambia
+			front.first = -1;
+			left.second = -1;
+			right.second = 1;
+			break;
+		case sur:
+			front.first = 1;
+			left.second = 1;
+			right.second = -1;
+			break;
+		case este:
+			front.second = 1;
+			left.first = -1;
+			right.first = 1;
+			break;
+		case oeste:
+			front.second = -1;
+			left.first = 1;
+			right.first = -1;
+			break;
+		case noreste:
+			front.first = -1;	front.second = 1;
+			left.second = -1;
+			right.first = 1;
+			break;
+		case suroeste:
+			front.first = 1;	front.second = -1;
+			left.second = 1;
+			right.first = -1;
+			break;
+		case noroeste:
+			front.first = -1;	front.second = -1;
+			left.first = 1;
+			right.second = 1;
+			break;
+		case sureste:
+			front.first = 1;	front.second = 1;
+			left.first = -1;
+			right.second = -1;
+			break;
+	}
+
+	// Escritura de casillas
+	map[st.fil][st.col] = view[0];
+	map[st.fil + front.first + left.first ][st.col + front.second + left.second ] = view[1];
+	map[st.fil + front.first              ][st.col + front.second               ] = view[2]; // Ej: La pos 2 se consigue con 1 mov hacia delante
+	map[st.fil + front.first + right.first][st.col + front.second + right.second] = view[3];
+
+	map[st.fil + 2*front.first + 2*left.first ][st.col + 2*front.second + 2*left.second ] = view[4 ];
+	map[st.fil + 2*front.first + 1*left.first ][st.col + 2*front.second + 1*left.second ] = view[5 ];
+	map[st.fil + 2*front.first                ][st.col + 2*front.second                 ] = view[6 ];
+	map[st.fil + 2*front.first + 1*right.first][st.col + 2*front.second + 1*right.second] = view[7 ];
+	map[st.fil + 2*front.first + 2*right.first][st.col + 2*front.second + 2*right.second] = view[8 ];
+
+	map[st.fil + 3*front.first + 3*left.first ][st.col + 3*front.second + 3*left.second ] = view[9 ];
+	map[st.fil + 3*front.first + 2*left.first ][st.col + 3*front.second + 2*left.second ] = view[10];
+	map[st.fil + 3*front.first + 1*left.first ][st.col + 3*front.second + 1*left.second ] = view[11];
+	map[st.fil + 3*front.first                ][st.col + 3*front.second                 ] = view[12];
+	map[st.fil + 3*front.first + 1*right.first][st.col + 3*front.second + 1*right.second] = view[13];
+	map[st.fil + 3*front.first + 2*right.first][st.col + 3*front.second + 2*right.second] = view[14];
+	map[st.fil + 3*front.first + 3*right.first][st.col + 3*front.second + 3*right.second] = view[15];
+}
+
+void ComportamientoJugador::ResetCharMatrix(vector<vector<unsigned char>> &matrix, char c = '?'){
 	int rows = matrix.size();
 
 	for (int i=0; i<rows; i++){
@@ -23,11 +163,7 @@ void ResetCharMatrix(vector<vector<unsigned char>> &matrix, char c = '?'){
 	}
 }
 
-//////////////////////////////////////////////////////////
-// Métodos privados
-//////////////////////////////////////////////////////////
-
-bool ComportamientoJugador::ResetState(unsigned int size){
+void ComportamientoJugador::ResetState(unsigned int size){
 	// La fila y columna serán las últimas para poder rellenar el mapa
     // auxiliar sin salir de él en caso de no poder ubicarnos
 	st.fil = st.col = size-1;
@@ -67,12 +203,17 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 }
 
 void ComportamientoJugador::UpdateState(const Sensores &sensores){
+	// Comprobamos si hemos perdido o conseguido objetos
+	if (sensores.reset) {wearingBikini = false; wearingShoes = false;}
+	else if (sensores.terreno[0] == 'K')		wearingBikini = true;
+	else if (sensores.terreno[0] == 'D')		wearingShoes = true;
+
 	// Sabemos la posición gracias a los sensores
 	if (SensorIsWorking(sensores)){
 		// Comprobamos si acabamos de llegar a una casilla de posicionamiento tras estar
 		// desubicados, donde pasaremos los datos que hemos descubierto en
 		// el mapa auxiliar al mapa resultado
-		if (wellLocated = false){
+		if (wellLocated == false){
 			// Actualizamos nuestra posición en mapa auxiliar
 			if (last_action == actFORWARD)
 				switch (st.brujula){
@@ -87,10 +228,9 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 				}
 			// Pasamos el mapa auxiliar con nuestra posición en este al mapa resultado
 			// con la nueva posición
-
-			// corregir: TransferMap(mapaAuxiliar, st.fil, st.col, mapaResultado, sensores.posF, sensores.posC)
+			TransferMap(sensores);
 		}
-		
+
 		// Actualizamos el estado
 		st.fil = sensores.posF;
 		st.col = sensores.posC;
@@ -155,7 +295,98 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 	*/
 }
 
+void ComportamientoJugador::TransferMap(const Sensores &sensores){
+	// Pasamos el mapa auxiliar con nuestra posición y orientación
+	// en este al mapa resultado con la nueva posición
+	unsigned int size = mapaResultado.size();
+	unsigned int i,j;
 
+	// Mista orientación
+	if (st.brujula == sensores.sentido)
+		for (i=0; i<size; i++)
+			for (j=0; j<size; j++)
+				// Si conocemos la casilla, la guardamos en mapa resultado
+				if (mapaAuxiliar[i+st.fil-sensores.posF][j+st.col-sensores.posC] != '?')
+					mapaResultado[i][j] = mapaAuxiliar[i+st.fil-sensores.posF][j+st.col-sensores.posC];
+	
+	// Falta implementar en el caso de que tuviesemos una orientación diferente
+}
+
+bool ComportamientoJugador::CanMoveForward(const Sensores &sensores){
+	bool canMoveForward = true;
+
+	if (sensores.terreno[2] == 'P' || sensores.terreno[2] == 'M' ||
+		sensores.superficie[2] != '_')
+		canMoveForward = false;
+
+	return canMoveForward;
+}
+
+int ComportamientoJugador::CostOfAction(const Sensores &sensores, Action action){
+	int cost;
+
+	// Calcula cuanta batería perdería debido a la siguiente casilla
+	if (action == actFORWARD){
+		switch (sensores.terreno[2]){
+			case 'A':
+				if (wearingBikini)	cost = 10;
+				else				cost = 200;
+				break;
+			case 'B':
+				if (wearingShoes)	cost = 15;
+				else				cost = 100;
+				break;
+			case 'T':
+				cost = 2;
+				break;
+			default:
+				cost = 1;
+				break;
+		}
+	}
+	// Calcula cuanta batería perdería con un giro de 45 º
+	else if (action==actTURN_SL || action==actTURN_SR) {
+		switch (sensores.terreno[0]){
+			case 'A':
+				if (wearingBikini)	cost = 5;
+				else				cost = 500;
+				break;
+			case 'B':
+				if (wearingShoes)	cost = 1;
+				else				cost = 3;
+				break;
+			case 'T':
+				cost = 2;
+				break;
+			default:
+				cost = 1;
+				break;
+		}
+	}
+	// Calcula cuanta batería perdería con un giro de 135 º
+	else if (action==actTURN_BL || action==actTURN_BR) {
+		switch (sensores.terreno[0]){
+			case 'A':
+				if (wearingBikini)	cost = 5;
+				else				cost = 50;
+				break;
+			case 'B':
+				if (wearingShoes)	cost = 1;
+				else				cost = 3;
+				break;
+			case 'T':
+				cost = 2;
+				break;
+			default:
+				cost = 1;
+				break;
+		}
+	}
+	else
+		cost = 0;
+	
+	return cost;
+}
 
 
 //////////////////////////////////////////////////////////
@@ -164,7 +395,7 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 
 Action ComportamientoJugador::think(Sensores sensores){
 	// Crea la acción
-	Action accion = actIDLE;
+	Action accion = actIDLE;			cout << "WEarng bkni: " << wearingBikini << endl;
 
 	// Actualizar estado
 	UpdateState(sensores);
@@ -172,19 +403,20 @@ Action ComportamientoJugador::think(Sensores sensores){
 	// Info debug
 	ShowInfo(sensores);
 
-	// Guarda la vista en el mapa
-	if (wellLocated)
-		SaveView(sensores.terreno, st, mapaResultado);
-	else
-		SaveView(sensores.terreno, st, mapaAuxiliar);
+	// Elegimos mapa
+	vector<vector<unsigned char>> * map;
+	if (wellLocated)	map = & mapaResultado;
+	else				map = & mapaAuxiliar;
+
+	// Guardamos la vista en el mapa
+	SaveActualView(sensores.terreno, *map);
 
 	// Decidir la nueva acción
-	if ((sensores.terreno[2]=='T' or sensores.terreno[2]=='S') or
-		sensores.terreno[2]=='G' and sensores.superficie[2]=='_'){
+	if (CanMoveForward(sensores) && CostOfAction(sensores, actFORWARD) < LOW_COST){
 		accion = actFORWARD;
 	} else{
-		if (rand()%2==0)	accion = actTURN_SR;
-		else				accion = actTURN_SL;
+		if (rand()%2==0)	accion = actTURN_BR;
+		else				accion = actTURN_BL;
 	}
 	
 	// Recorda la última acción
