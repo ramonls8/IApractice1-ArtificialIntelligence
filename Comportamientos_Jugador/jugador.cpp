@@ -309,7 +309,10 @@ void ComportamientoJugador::TransferMap(const Sensores &sensores){
 				if (mapaAuxiliar[i+st.fil-sensores.posF][j+st.col-sensores.posC] != '?')
 					mapaResultado[i][j] = mapaAuxiliar[i+st.fil-sensores.posF][j+st.col-sensores.posC];
 	
-	// Falta implementar en el caso de que tuviesemos una orientación diferente
+	// No es necesario implementarlo para una orientaciones diferentes
+	// ya que cuando reaparece o cuando aparece por primera vez en un nivel
+	// en el que está desubicado, siempre lo hace mirando al norte, que
+	// es la orientación por defecto de la brújula
 }
 
 bool ComportamientoJugador::CanMoveForward(const Sensores &sensores){
@@ -388,14 +391,54 @@ int ComportamientoJugador::CostOfAction(const Sensores &sensores, Action action)
 	return cost;
 }
 
+bool ComportamientoJugador::WorthLiving(const Sensores &sensores){
+	return wearingBikini || wearingShoes;
+}
+
+bool ComportamientoJugador::Recharge(const Sensores &sensores){
+	// Nº de veces que la vida batería debe ser mayor que la vida para dejar
+	// de esperar en esta casilla
+	unsigned int c = 3;
+
+	if (sensores.terreno[0] == 'X')
+		if (sensores.bateria < sensores.vida * c && sensores.bateria < MAX_BATTERY)
+			return true;
+	
+	return false;
+}
+
+Action ComportamientoJugador::EscapeFromWolves(const Sensores &sensores){
+	// Si devuelve actIDLE, es porque no hay que escapar
+	Action action = actIDLE;
+
+	if (WorthLiving(sensores)){
+		// Si hay un lobo delante, se gira
+		if (sensores.superficie[2] == 'l' || sensores.superficie[1] == 'l' || sensores.superficie[3] == 'l'){
+			if (rand()%2==0)	action = actTURN_BR;
+			else				action = actTURN_BL;
+
+			wolfIsNear = true;
+		}
+		// Si en el turno anterior había un lobo detrás, intenta avanzar
+		else if (wolfIsNear)
+			if (CanMoveForward(sensores))
+				action = actFORWARD;
+			wolfIsNear = false;	
+	}
+	else
+		wolfIsNear = false;
+
+	return action;
+}
 
 //////////////////////////////////////////////////////////
 // Métodos públicos
 //////////////////////////////////////////////////////////
 
 Action ComportamientoJugador::think(Sensores sensores){
+	// ACTUALIZACIÓN
 	// Crea la acción
-	Action accion = actIDLE;			cout << "WEarng bkni: " << wearingBikini << endl;
+	Action action = actIDLE;
 
 	// Actualizar estado
 	UpdateState(sensores);
@@ -411,17 +454,34 @@ Action ComportamientoJugador::think(Sensores sensores){
 	// Guardamos la vista en el mapa
 	SaveActualView(sensores.terreno, *map);
 
-	// Decidir la nueva acción
+
+
+
+	// NUEVA ACCIÓN
+
+	// Escapar de los lobos
+	action = EscapeFromWolves(sensores);
+	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST)
+		return action;
+	
+
+	// Esperar en casilla de recarga
+	if (Recharge(sensores))
+		return actIDLE;
+
+	// Decisión sencilla temporal
 	if (CanMoveForward(sensores) && CostOfAction(sensores, actFORWARD) < LOW_COST){
-		accion = actFORWARD;
+		action = actFORWARD;
 	} else{
-		if (rand()%2==0)	accion = actTURN_BR;
-		else				accion = actTURN_BL;
+		if (rand()%2==0)	action = actTURN_BR;
+		else				action = actTURN_BL;
 	}
 	
-	// Recorda la última acción
-	last_action = accion;
-	return accion;
+
+
+	// Recordar la última acción
+	last_action = action;
+	return action;
 }
 
 int ComportamientoJugador::interact(Action accion, int valor){

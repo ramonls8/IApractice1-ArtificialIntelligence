@@ -39,8 +39,10 @@ class ComportamientoJugador : public Comportamiento{
     vector<vector<unsigned char>> mapaAuxiliar;
     bool wearingBikini = false;
     bool wearingShoes = false;
+    bool wolfIsNear = false;
 
     const unsigned int LOW_COST = 20;
+    const unsigned int MAX_BATTERY = 5000;
 
 
     // Calcula y devuelve una vista del mapa para un estado concreto
@@ -76,6 +78,16 @@ class ComportamientoJugador : public Comportamiento{
     // es decir, si se mueve, el coste de la casilla donde llegue, si gira,
     // el coste de girar en la casilla en la que lo hace
     int CostOfAction(const Sensores &sensores, Action action);
+
+    // Espera en la casilla de recarga para conseguir batería
+    bool Recharge(const Sensores &sensores);
+
+    // Devuelve true si tenemos objetos, por lo que no debemos morir
+    bool WorthLiving(const Sensores &sensores);
+
+    // Intenta escapar de los lobos. Si devuelve actIDLE, es porque
+    // no hay que escapar
+    Action EscapeFromWolves(const Sensores &sensores);
 };
 
 #endif
