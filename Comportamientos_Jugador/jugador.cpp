@@ -202,11 +202,17 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 	cout << endl;
 }
 
-void UpdateLocatedPlaces(const Sensores &sensores){
-	
+void ComportamientoJugador::UpdateLocatedPlacesNear(){
+	// Comprueba que la posición del jugador es válida para mapaResultado
+	if (!wellLocated)
+		return;
+
+	for (unsigned int i = st.fil-3; i<=st.fil+3; i++)
+		for (unsigned int j = st.col-3; j<=st.col+3; j++)
+			cout << " corregir  " << endl;
 }
 
-void RebuildLocatedPlaces(){
+void ComportamientoJugador::UpdateLocatedPlacesComplete(){
 
 }
 
@@ -220,6 +226,8 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 	if (SensorIsWorking(sensores)){
 		// Acabamos de llegar a una casilla de posicionamiento tras estar desubicados
 		if (wellLocated == false){
+			wellLocated = true;
+
 			// Actualizamos nuestra posición en mapa auxiliar
 			if (last_action == actFORWARD)
 				switch (st.brujula){
@@ -235,18 +243,17 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 			// Pasamos el mapa auxiliar a mapa resultado y actualizamos posición en este
 			TransferMap(sensores);
 			// Reconstruimos locatedPlaces con los nuevos valores de mapaResultado
-			RebuildLocatedPlaces();
+			UpdateLocatedPlacesComplete();
 		}
 		// Seguimos ubicados
 		else
 			// Actualizamos locatedPlaces con la vista actual
-			UpdateLocatedPlaces(sensores);
+			UpdateLocatedPlacesNear();
 
 		// Actualizamos el estado
 		st.fil = sensores.posF;
 		st.col = sensores.posC;
 		st.brujula = sensores.sentido;
-		wellLocated = true;
 	}
 	
 	// Hay reset y no estamos ubicados

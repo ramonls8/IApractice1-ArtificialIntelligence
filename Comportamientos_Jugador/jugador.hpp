@@ -43,7 +43,10 @@ class ComportamientoJugador : public Comportamiento{
     // A partir de cierto nº no se considera como peligro
     unsigned int distanceFromWolves = FAR;
     // Variables para localizar determinadas casillas
-    set<pair<unsigned char, set<pair<unsigned int, unsigned int>>>> locatedPlaces;
+    set<pair<unsigned int, unsigned int>> locatedPositioning;
+    set<pair<unsigned int, unsigned int>> locatedBikinis;
+    set<pair<unsigned int, unsigned int>> locatedShoes;
+    set<pair<unsigned int, unsigned int>> locatedRecharges;
 
     // Constantes
     const unsigned int LOW_COST = 20;
@@ -70,11 +73,13 @@ class ComportamientoJugador : public Comportamiento{
     // Informa de la posición actual
     void ShowInfo(const Sensores &sensores);
 
-    // Actualiza locatedPlaces si está bien ubicado con los elementos que tiene en vista
-    void UpdateLocatedPlaces(const Sensores &sensores);
+    // Actualiza locatedPlaces a partir de mapaResultado si está bien ubicado,
+    // solo las 49 casillas más cercanas
+    void UpdateLocatedPlacesNear();
 
-    // Reconstruye locatedPlaces a partir de mapaResultado
-    void RebuildLocatedPlaces();
+    // Actualiza locatedPlaces a partir de mapaResultado si está bien ubicado,
+    // todas las casillas del mapa
+    void UpdateLocatedPlacesComplete();
 
     // Actualiza state tras la última acción
     void UpdateState(const Sensores &sensores);
