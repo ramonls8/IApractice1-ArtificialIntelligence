@@ -2,6 +2,7 @@
 #define COMPORTAMIENTOJUGADOR_H
 
 #include "comportamientos/comportamiento.hpp"
+#include <set>
 using namespace std;
 
 struct state{
@@ -39,8 +40,12 @@ class ComportamientoJugador : public Comportamiento{
     vector<vector<unsigned char>> mapaAuxiliar;
     bool wearingBikini = false;
     bool wearingShoes = false;
-    unsigned int distanceFromWolves = FAR;  // A partir de cierto nº no se considera como peligro
+    // A partir de cierto nº no se considera como peligro
+    unsigned int distanceFromWolves = FAR;
+    // Variables para localizar determinadas casillas
+    set<pair<unsigned char, set<pair<unsigned int, unsigned int>>>> locatedPlaces;
 
+    // Constantes
     const unsigned int LOW_COST = 20;
     const unsigned int MAX_BATTERY = 5000;
     const unsigned int FAR = 4294967295;
@@ -64,6 +69,12 @@ class ComportamientoJugador : public Comportamiento{
 
     // Informa de la posición actual
     void ShowInfo(const Sensores &sensores);
+
+    // Actualiza locatedPlaces si está bien ubicado con los elementos que tiene en vista
+    void UpdateLocatedPlaces(const Sensores &sensores);
+
+    // Reconstruye locatedPlaces a partir de mapaResultado
+    void RebuildLocatedPlaces();
 
     // Actualiza state tras la última acción
     void UpdateState(const Sensores &sensores);

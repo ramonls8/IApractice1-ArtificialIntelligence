@@ -202,6 +202,14 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 	cout << endl;
 }
 
+void UpdateLocatedPlaces(const Sensores &sensores){
+	
+}
+
+void RebuildLocatedPlaces(){
+
+}
+
 void ComportamientoJugador::UpdateState(const Sensores &sensores){
 	// Comprobamos si hemos perdido o conseguido objetos
 	if (sensores.reset) {wearingBikini = false; wearingShoes = false;}
@@ -210,9 +218,7 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 
 	// Sabemos la posición gracias a los sensores
 	if (SensorIsWorking(sensores)){
-		// Comprobamos si acabamos de llegar a una casilla de posicionamiento tras estar
-		// desubicados, donde pasaremos los datos que hemos descubierto en
-		// el mapa auxiliar al mapa resultado
+		// Acabamos de llegar a una casilla de posicionamiento tras estar desubicados
 		if (wellLocated == false){
 			// Actualizamos nuestra posición en mapa auxiliar
 			if (last_action == actFORWARD)
@@ -226,10 +232,15 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 					case oeste:		st.col--;			break;
 					case noroeste:	st.fil--; st.col--;	break;
 				}
-			// Pasamos el mapa auxiliar con nuestra posición en este al mapa resultado
-			// con la nueva posición
+			// Pasamos el mapa auxiliar a mapa resultado y actualizamos posición en este
 			TransferMap(sensores);
+			// Reconstruimos locatedPlaces con los nuevos valores de mapaResultado
+			RebuildLocatedPlaces();
 		}
+		// Seguimos ubicados
+		else
+			// Actualizamos locatedPlaces con la vista actual
+			UpdateLocatedPlaces(sensores);
 
 		// Actualizamos el estado
 		st.fil = sensores.posF;
@@ -238,7 +249,7 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 		wellLocated = true;
 	}
 	
-	// Hay reset y no sabemos la nueva ubicación
+	// Hay reset y no estamos ubicados
 	else if (sensores.reset){
 		wellLocated = false;
 
@@ -247,7 +258,7 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 		ResetState(mapaResultado.size());
 	}
 
-	// No hay reset y no valen los sensores, por lo que tenemos en cuenta last_action
+	// No hay reset y no estamos ubicados, por lo que tenemos en cuenta last_action
 	else {
 		switch (last_action){
 			case actFORWARD:	// Da un paso si no hay colisión
@@ -499,7 +510,6 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Guardamos la vista en el mapa
 	SaveActualView(sensores.terreno, *map);
-
 
 
 
