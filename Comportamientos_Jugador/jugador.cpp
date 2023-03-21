@@ -325,6 +325,46 @@ bool ComportamientoJugador::CanMoveForward(const Sensores &sensores){
 	return canMoveForward;
 }
 
+bool ComportamientoJugador::IsCharacter(unsigned char c){
+	// Comprueba si la letra es minúscula
+	return 'a' <= c || c <= 'z';
+}
+
+unsigned int ComportamientoJugador::DintaceInViewFromObject(const Sensores &sensores, unsigned char c){
+	vector<unsigned char> view;
+
+	if (IsCharacter(c))	view = sensores.superficie;
+	else				view = sensores.terreno;
+
+	if (view[0]==c)
+		return 0;
+	else if (view[1]==c || view[2]==c || view[3]==c)
+		return 1;
+	else if (view[4]==c || view[5]==c || view[6]==c || view[7]==c || view[8]==c)
+		return 2;
+	else if (view[9]==c || view[10]==c || view[11]==c || view[12]==c
+			|| view[13]==c || view[14]==c || view[15]==c)
+		return 3;
+	
+	return FAR;
+}
+
+unsigned int ComportamientoJugador::DintaceInMapFromPlace(unsigned int row, unsigned int col){
+	// Distancia en filas y columnas
+	int rowDistance = st.fil - row;
+	int colDistance = st.col - col;
+
+	// Valor absoluto de la distancia
+	if (rowDistance < 0)	rowDistance = -rowDistance;
+	if (colDistance < 0)	colDistance = -colDistance;
+
+	// Como podemos movernos en diagonal, el nº de pasos será la mayor distancia entre filas y columnas
+	unsigned int distance = rowDistance;
+	if (rowDistance < colDistance)	distance = colDistance;
+
+	return distance;
+}
+
 int ComportamientoJugador::CostOfAction(const Sensores &sensores, Action action){
 	int cost;
 
@@ -408,25 +448,30 @@ bool ComportamientoJugador::Recharge(const Sensores &sensores){
 }
 
 Action ComportamientoJugador::EscapeFromWolves(const Sensores &sensores){
+	const unsigned int DANGEROUS_DISTANCE = 3;
+
 	// Si devuelve actIDLE, es porque no hay que escapar
 	Action action = actIDLE;
 
 	if (WorthLiving(sensores)){
+		unsigned int newDistance = DintaceInViewFromObject(sensores, 'l');
+
 		// Si hay un lobo delante, se gira
-		if (sensores.superficie[2] == 'l' || sensores.superficie[1] == 'l' || sensores.superficie[3] == 'l'){
+		if (newDistance < DANGEROUS_DISTANCE){
 			if (rand()%2==0)	action = actTURN_BR;
 			else				action = actTURN_BL;
 
-			wolfIsNear = true;
+			distanceFromWolves = newDistance;
 		}
 		// Si en el turno anterior había un lobo detrás, intenta avanzar
-		else if (wolfIsNear)
+		else if (distanceFromWolves < DANGEROUS_DISTANCE){
 			if (CanMoveForward(sensores))
 				action = actFORWARD;
-			wolfIsNear = false;	
+			distanceFromWolves++;
+		}
 	}
 	else
-		wolfIsNear = false;
+		distanceFromWolves = FAR;
 
 	return action;
 }
@@ -437,6 +482,7 @@ Action ComportamientoJugador::EscapeFromWolves(const Sensores &sensores){
 
 Action ComportamientoJugador::think(Sensores sensores){
 	// ACTUALIZACIÓN
+
 	// Crea la acción
 	Action action = actIDLE;
 
@@ -478,6 +524,8 @@ Action ComportamientoJugador::think(Sensores sensores){
 	}
 	
 
+
+	// FILANIZACIÓN
 
 	// Recordar la última acción
 	last_action = action;

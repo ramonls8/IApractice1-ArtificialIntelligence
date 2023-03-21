@@ -39,10 +39,11 @@ class ComportamientoJugador : public Comportamiento{
     vector<vector<unsigned char>> mapaAuxiliar;
     bool wearingBikini = false;
     bool wearingShoes = false;
-    bool wolfIsNear = false;
+    unsigned int distanceFromWolves = FAR;  // A partir de cierto nº no se considera como peligro
 
     const unsigned int LOW_COST = 20;
     const unsigned int MAX_BATTERY = 5000;
+    const unsigned int FAR = 4294967295;
 
 
     // Calcula y devuelve una vista del mapa para un estado concreto
@@ -70,6 +71,16 @@ class ComportamientoJugador : public Comportamiento{
     // Pasa los datos del mapa temporal al mapa resultado cuando
     // el personaje se ubica
     void TransferMap(const Sensores &sensores);
+
+    // Desvuelve true si un carácter es correspondiente a un personaje y no a una casilla,
+    // es decir, aparecería en sensores.superficie y no en sensores.terreno
+    bool IsCharacter(unsigned char c);
+
+    // Calcula la distancia a un elemento c en las casillas de la vista actual
+    unsigned int DintaceInViewFromObject(const Sensores &sensores, unsigned char c);
+
+    // Calcula la distancia del personaje a una posición r,c del mapa
+    unsigned int DintaceInMapFromPlace(unsigned int row, unsigned int col);
 
     // Devuelve true si puede avanzar hacia delante
     bool CanMoveForward(const Sensores &sensores);
