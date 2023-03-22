@@ -202,20 +202,6 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 	cout << endl;
 }
 
-void ComportamientoJugador::UpdateLocatedPlacesNear(){
-	// Comprueba que la posición del jugador es válida para mapaResultado
-	if (!wellLocated)
-		return;
-
-	for (unsigned int i = st.fil-3; i<=st.fil+3; i++)
-		for (unsigned int j = st.col-3; j<=st.col+3; j++)
-			cout << " corregir  " << endl;
-}
-
-void ComportamientoJugador::UpdateLocatedPlacesComplete(){
-
-}
-
 void ComportamientoJugador::UpdateState(const Sensores &sensores){
 	// Comprobamos si hemos perdido o conseguido objetos
 	if (sensores.reset) {wearingBikini = false; wearingShoes = false;}
@@ -242,13 +228,17 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 				}
 			// Pasamos el mapa auxiliar a mapa resultado y actualizamos posición en este
 			TransferMap(sensores);
-			// Reconstruimos locatedPlaces con los nuevos valores de mapaResultado
-			UpdateLocatedPlacesComplete();
+			/*
+			// Reconstruimos los objetos localizados con los nuevos valores de mapaResultado
+			UpdateLocatedObjects(1);
+			*/
 		}
+		/*
 		// Seguimos ubicados
 		else
-			// Actualizamos locatedPlaces con la vista actual
-			UpdateLocatedPlacesNear();
+			// Actualizamos los objetos localizados con la vista actual
+			UpdateLocatedObjects(0);
+		*/
 
 		// Actualizamos el estado
 		st.fil = sensores.posF;
@@ -365,6 +355,18 @@ unsigned int ComportamientoJugador::DintaceInViewFromObject(const Sensores &sens
 		return 3;
 	
 	return FAR;
+}
+
+unsigned int ComportamientoJugador::DintaceInViewFromPlace(unsigned int p){
+	unsigned int distance;
+
+	if (p==0)				distance = 0;
+	else if (1<=p && p<=3)	distance = 1;
+	else if (4<=p && p<=8)	distance = 2;
+	else if (9<=p && p<=15)	distance = 3;
+	else					distance = FAR;
+
+	return distance;
 }
 
 unsigned int ComportamientoJugador::DintaceInMapFromPlace(unsigned int row, unsigned int col){
@@ -494,12 +496,151 @@ Action ComportamientoJugador::EscapeFromWolves(const Sensores &sensores){
 	return action;
 }
 
+/*
+void ComportamientoJugador::UpdateLocatedObjects(bool fullMap){
+	// Comprueba que la posición del jugador es válida para mapaResultado
+	if (!wellLocated)
+		return;
+
+	int firstRow, lastRow, firstCol, lastCol;
+	int size = mapaResultado.size();
+
+	// Actualiza las 49 casillas más cercanas
+	if (!fullMap){
+		firstRow = st.fil-3;
+		lastRow = st.fil+3;
+		firstCol = st.col-3;
+		lastCol = st.col+3;
+
+		// Evitamos salir del mapa
+		if (firstRow<0)		firstRow = 0;
+		if (firstCol<0)		firstCol = 0;
+		if (lastRow>size-1)	lastRow = size-1;
+		if (lastCol>size-1)	lastCol = size-1;
+	}
+	// Actualiza todo el mapa
+	else{
+		firstRow = 0;
+		firstCol = 0;
+		lastRow = size-1;
+		lastCol = size-1;
+	}
+
+	for (unsigned int i = firstRow; i<=lastRow; i++)
+		for (unsigned int j = firstCol; j<=lastCol; j++)
+			switch (mapaResultado[i][j]){
+				case 'G':
+					locatedPositioning.insert({i,j});	break;
+				case 'K':
+					locatedBikinis.insert({i,j});		break;
+				case 'D':
+					locatedShoes.insert({i,j});			break;
+				case 'X':
+					locatedRecharges.insert({i,j});		break;
+			}
+}
+*/
+
+unsigned int ComportamientoJugador::PriorityOf(const Sensores & sensores, unsigned char c){
+	// Devuelve la prioridad para conseguir un objeto, sin tener en cuenta la distancia
+	unsigned int priority;
+
+	switch (c){
+		case 'G':	// Posicionamiento
+			priority = (wellLocated) ? FAR : 0;
+			break;
+		case 'K':	// Bikini
+			priority = (wearingBikini) ? FAR : 2;
+			break;
+		case 'D':	// Zapatillas
+			priority = (wearingShoes) ? FAR : 2;
+			break;
+		case 'X':	// Recarga
+			priority = (sensores.bateria<LOW_BATTERY && sensores.vida>LOW_LIFE) ? 2 : FAR;
+			break;
+		default:	// Otros
+			priority = FAR;
+			break;
+	}
+
+	return priority;
+}
+
+int ComportamientoJugador::PriotityObjectInView(const Sensores &sensores){
+	int bestObj, bestObjPriotity = FAR;
+
+	// Busca el objeto con menor prioridad
+	for (unsigned int i=1; i<16; i++){
+		// Suma la prioridad del objeto y la distancia
+		int objPriotity = PriorityOf(sensores, sensores.terreno[i]) + DintaceInViewFromPlace(i);
+
+		// Se queda el objeto más prioritario hasta ahora
+		if (objPriotity < bestObjPriotity){
+			bestObj = i;
+			bestObjPriotity = objPriotity;
+		}
+	}
+
+	// Solo devuelve el objeto si tiene una prioridad aceptable
+	if (bestObjPriotity >= FAR)
+		bestObj = INVALID_POS;
+	
+	return bestObj;
+}
+
+pair<int,int> ComportamientoJugador::PriotityObjectInMap(const Sensores &sensores){
+	pair<int,int> bestObj;
+	int bestObjPriotity = FAR;
+	unsigned int size = mapaResultado.size();
+
+	// Busca el objeto con menor prioridad
+	for (unsigned int i=0; i<size; i++)
+		for (unsigned int j=0; j<size; j++){
+			// Suma la prioridad del objeto y la distancia
+			int objPriotity = PriorityOf(sensores, mapaResultado[i][j]) + DintaceInMapFromPlace(i,j);
+
+			// Se queda el objeto más prioritario hasta ahora
+			if (objPriotity < bestObjPriotity){
+				bestObj = {i,j};
+				bestObjPriotity = objPriotity;
+			}
+		}
+
+	// Solo devuelve el objeto si tiene una prioridad aceptable
+	if (bestObjPriotity >= FAR)
+		bestObj = INVALID_PLACE;
+	
+	return bestObj;
+}
+
+Action ComportamientoJugador::MoveToBestObjectInView(const Sensores &sensores){
+	int obj = PriotityObjectInView(sensores);
+
+	// Comprueba que hay un objeto al que ir
+	if (obj == INVALID_POS)
+		return actIDLE;
+	
+	return actFORWARD;
+	// corregir --------------------------------------------------------------------------------------------------------------------------------
+}
+
+Action ComportamientoJugador::MoveToBestObjectInMap(const Sensores &sensores){
+	pair<int,int> obj = PriotityObjectInMap(sensores);
+
+	// Comprueba que hay un objeto al que ir
+	if (obj == INVALID_PLACE)
+		return actIDLE;
+	
+	return actFORWARD;
+	// corregir --------------------------------------------------------------------------------------------------------------------------------
+}
+
 //////////////////////////////////////////////////////////
 // Métodos públicos
 //////////////////////////////////////////////////////////
 
 Action ComportamientoJugador::think(Sensores sensores){
-	// ACTUALIZACIÓN
+	////// ACTUALIZACIÓN //////
 
 	// Crea la acción
 	Action action = actIDLE;
@@ -512,25 +653,33 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Elegimos mapa
 	vector<vector<unsigned char>> * map;
-	if (wellLocated)	map = & mapaResultado;
-	else				map = & mapaAuxiliar;
+	if (wellLocated)		map = & mapaResultado;
+	else					map = & mapaAuxiliar;
 
 	// Guardamos la vista en el mapa
 	SaveActualView(sensores.terreno, *map);
 
 
 
-	// NUEVA ACCIÓN
+	////// NUEVA ACCIÓN //////
 
-	// Escapar de los lobos
+	// Escapa de los lobos
 	action = EscapeFromWolves(sensores);
-	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST)
+	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST && CanMoveForward(sensores))
 		return action;
 	
-
-	// Esperar en casilla de recarga
+	// Espera en casilla de recarga
 	if (Recharge(sensores))
 		return actIDLE;
+
+	// Busca el objeto más prioritario
+	if (wellLocated)		action = MoveToBestObjectInMap(sensores);
+	else					action = MoveToBestObjectInView(sensores);
+
+	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST && CanMoveForward(sensores))				// corregir: puede que <LOW_COST sea mejor dentro de las funciones
+		return action;
+
+	
 
 	// Decisión sencilla temporal
 	if (CanMoveForward(sensores) && CostOfAction(sensores, actFORWARD) < LOW_COST){
@@ -542,7 +691,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 	
 
 
-	// FILANIZACIÓN
+	////// FILANIZACIÓN //////
 
 	// Recordar la última acción
 	last_action = action;

@@ -42,16 +42,22 @@ class ComportamientoJugador : public Comportamiento{
     bool wearingShoes = false;
     // A partir de cierto nº no se considera como peligro
     unsigned int distanceFromWolves = FAR;
+    /*
     // Variables para localizar determinadas casillas
     set<pair<unsigned int, unsigned int>> locatedPositioning;
     set<pair<unsigned int, unsigned int>> locatedBikinis;
     set<pair<unsigned int, unsigned int>> locatedShoes;
     set<pair<unsigned int, unsigned int>> locatedRecharges;
+    */
 
     // Constantes
     const unsigned int LOW_COST = 20;
     const unsigned int MAX_BATTERY = 5000;
-    const unsigned int FAR = 4294967295;
+    const unsigned int LOW_BATTERY = 700;
+    const unsigned int LOW_LIFE = 500;
+    const unsigned int FAR = 99999;
+    const int INVALID_POS = -1;
+    const pair<int,int> INVALID_PLACE = {-1,-1};
 
 
     // Calcula y devuelve una vista del mapa para un estado concreto
@@ -73,14 +79,6 @@ class ComportamientoJugador : public Comportamiento{
     // Informa de la posición actual
     void ShowInfo(const Sensores &sensores);
 
-    // Actualiza locatedPlaces a partir de mapaResultado si está bien ubicado,
-    // solo las 49 casillas más cercanas
-    void UpdateLocatedPlacesNear();
-
-    // Actualiza locatedPlaces a partir de mapaResultado si está bien ubicado,
-    // todas las casillas del mapa
-    void UpdateLocatedPlacesComplete();
-
     // Actualiza state tras la última acción
     void UpdateState(const Sensores &sensores);
 
@@ -94,6 +92,9 @@ class ComportamientoJugador : public Comportamiento{
 
     // Calcula la distancia a un elemento c en las casillas de la vista actual
     unsigned int DintaceInViewFromObject(const Sensores &sensores, unsigned char c);
+
+    // Calcula la distancia a un elemento en posición p de la vista actual
+    unsigned int DintaceInViewFromPlace(unsigned int p);
 
     // Calcula la distancia del personaje a una posición r,c del mapa
     unsigned int DintaceInMapFromPlace(unsigned int row, unsigned int col);
@@ -115,6 +116,31 @@ class ComportamientoJugador : public Comportamiento{
     // Intenta escapar de los lobos. Si devuelve actIDLE, es porque
     // no hay que escapar
     Action EscapeFromWolves(const Sensores &sensores);
+
+    /*
+    // Actualiza los objetos localizados a partir de mapaResultado si está bien ubicado,
+    // solo las 49 casillas más cercanas o todo el mapa
+    void UpdateLocatedObjects(bool fullMap);
+    */
+
+
+    // Devuelve la prioridad para conseguir un objeto, sin tener en cuenta la distancia
+    unsigned int PriorityOf(const Sensores & sensores, unsigned char c);
+
+    // Decide el objeto más prioritario en ese momento en la vista
+    int PriotityObjectInView(const Sensores &sensores);
+
+    // Decide el objeto más prioritario en ese momento en el mapa
+    pair<int,int> PriotityObjectInMap(const Sensores &sensores);
+
+    // Devuelve una acción para ir al objeto más prioritario en la vista.
+    // actIDLE si no hay un lugar necesario al que ir.
+    Action MoveToBestObjectInView(const Sensores &sensores);
+
+    // Devuelve una acción para ir al objeto más prioritario en el mapa.
+    // actIDLE si no hay un lugar necesario al que ir.
+    Action MoveToBestObjectInMap(const Sensores &sensores);
+
 };
 
 #endif
