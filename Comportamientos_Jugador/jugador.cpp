@@ -175,7 +175,7 @@ bool ComportamientoJugador::SensorIsWorking(const Sensores &sensores){
 }
 
 void ComportamientoJugador::ShowInfo(const Sensores &sensores){
-	cout << "Fil " << sensores.posF << ", Col " << sensores.posC << ", ";
+	cout << "Fil: " << st.fil << ", Col: " << st.col << ", ";
 	switch(sensores.sentido){
 		case 0: cout << "Norte" << endl;	break;
 		case 1: cout << "Noreste" << endl;	break;
@@ -186,6 +186,12 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 		case 6: cout << "Oeste" << endl;	break;
 		case 7: cout << "Noroeste" << endl;	break;
 	}
+
+	cout << "Colisión: " << sensores.colision << "    ";
+	cout << "Reset: " << sensores.reset << "    ";
+	cout << "Vida: " << sensores.vida << "    ";
+	cout << "Última acción: " << last_action << endl;
+
 	cout << "Terreno:    ";
 	for (int i=0; i<sensores.terreno.size(); i++)
 		cout << sensores.terreno[i];
@@ -196,9 +202,6 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 		cout << sensores.superficie[i];
 	cout << endl;
 
-	cout << "Colisión:   " << sensores.colision << endl;
-	cout << "Reset:      " << sensores.reset << endl;
-	cout << "Vida:       " << sensores.vida << endl;
 	cout << endl;
 }
 
@@ -479,7 +482,7 @@ bool ComportamientoJugador::Recharge(const Sensores &sensores){
 	const unsigned int C = 3;
 
 	if (sensores.terreno[0] == 'X')
-		if (sensores.bateria < sensores.vida * C && sensores.bateria < MAX_BATTERY)
+		if (sensores.bateria < sensores.vida * C && sensores.bateria < MAX_BATTERY-10)
 			return true;
 	
 	return false;
@@ -663,7 +666,7 @@ Action ComportamientoJugador::EscapeFromZone(const Sensores &sensores){
 	}
 
 	// Rotaciones y máximo de veces que lo hará
-	Action rotate = actTURN_BR;
+	Action rotate = (rand()%2) ? actTURN_BL : actTURN_BR;
 	const unsigned int MAXTIME = 3;
 
 /*
@@ -696,6 +699,71 @@ Action ComportamientoJugador::EscapeFromZone(const Sensores &sensores){
 	
 	// En otro caso, intenta rotar aunque tenga coste alto
 	return rotate;
+}
+
+bool ComportamientoJugador::IsWall(unsigned char c){
+	return c == 'M';
+}
+
+Action ComportamientoJugador::Wall(const Sensores &sensores){
+	// El muro está a la izq o a la der
+	static bool left = true;
+
+	// Pasos para atravesar muro
+	const unsigned int STEPS_NUMBER = 3;
+
+	// Entra en el espacio abierto del muro
+	if (nextToWall > 0 && nextToWall < STEPS_NUMBER && CostOfPassingBy(sensores.terreno[2],NO_ENTITY)<LOW_COST){
+		nextToWall--;
+		return actFORWARD;
+	}
+
+	// Comprueba si no hay muro
+	
+	//if (nextToWall==0 && CostOfPassingBy(sensores.terreno[1],NO_ENTITY)<FAR
+	//	&& CostOfPassingBy(sensores.terreno[2],NO_ENTITY)<FAR && CostOfPassingBy(sensores.terreno[3],NO_ENTITY)<FAR)
+	if (nextToWall==0 && sensores.terreno[1]!='M' && sensores.terreno[2]!='M' && sensores.terreno[3]!='M')
+		return actIDLE;
+	
+	// Si el muro está delante, gira donde no se puede pasar,
+	// si no gira al lado contrario del muro que estaba recorriendo
+	
+	//if (CostOfPassingBy(sensores.terreno[2],NO_ENTITY)==FAR){
+	if (sensores.terreno[2] == 'M'){
+		if (CostOfPassingBy(sensores.terreno[1],NO_ENTITY) < LOW_COST)
+			return actTURN_SL;
+		else if (CostOfPassingBy(sensores.terreno[3],NO_ENTITY) < LOW_COST)
+			return actTURN_SR;
+		else
+			return (left) ? actTURN_SR : actTURN_SL;
+	}
+
+	// Si tiene muro a la izq y puede avanzar
+	
+	//if (CostOfPassingBy(sensores.terreno[1],NO_ENTITY)==FAR && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
+	if (sensores.terreno[1] == 'M' && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
+		nextToWall = STEPS_NUMBER;
+		left = true;
+		return actFORWARD;
+	}
+
+	// Si tiene muro a la der y puede avanzar
+	
+	//if (CostOfPassingBy(sensores.terreno[3],NO_ENTITY)==FAR && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
+	if (sensores.terreno[3] == 'M' && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
+		nextToWall = STEPS_NUMBER;
+		left = false;
+		return actFORWARD;
+	}
+
+	// Gira para entrar en el espacio abierto del muro
+	if (nextToWall == STEPS_NUMBER){
+		nextToWall--;
+		return (left) ? actTURN_SL : actTURN_SR;
+	}
+	
+	// No puede avanzar por alguna razón, gira 135º aleatoreamente
+	return (rand()%2) ? actTURN_BL : actTURN_BR;
 }
 
 //////////////////////////////////////////////////////////
@@ -751,8 +819,12 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Muros
 	if (!actionDetermined){
-
+		action = Wall(sensores);
+		if (action != actIDLE)
+			actionDetermined = true;
 	}
+	else
+		nextToWall = 0;
 
 	// Si está atrapado en bosque o agua sin objetos, intenta salir
 	if (!actionDetermined && IsTrapped(sensores)){
@@ -787,8 +859,8 @@ Action ComportamientoJugador::think(Sensores sensores){
 	////// FILANIZACIÓN //////
 
 	// Si hay una entidad delante y quiere avanzar, no podrá
-	if (action==actFORWARD && sensores.superficie[2]!=NO_ENTITY)
-		action = actIDLE;
+	if (action==actFORWARD && CostOfPassingBy(sensores.terreno[2],sensores.superficie[2]) == FAR)
+		action = (rand()%2) ? actTURN_BL : actTURN_BR;
 
 	// Recordar la última acción
 	last_action = action;

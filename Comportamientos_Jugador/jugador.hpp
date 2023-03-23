@@ -40,8 +40,8 @@ class ComportamientoJugador : public Comportamiento{
     vector<vector<unsigned char>> mapaAuxiliar;
     bool wearingBikini = false;
     bool wearingShoes = false;
-    // A partir de cierto nº no se considera como peligro
     unsigned int distanceFromWolves = FAR;
+    unsigned int nextToWall = 0;
 
     // Constantes
     const unsigned int LOW_COST = 20;
@@ -142,6 +142,12 @@ class ComportamientoJugador : public Comportamiento{
     // Devuelve una acción para escapar de una zona de agua o bosque.
     // Llamar a la función solo si está atrapado.
     Action EscapeFromZone(const Sensores &sensores);
+
+    // Devuelve si una casilla se considera un muro
+    bool IsWall(unsigned char c);
+
+    // Devuelve una acción para recorrer y atravesar un muro
+    Action Wall(const Sensores &sensores);
 };
 
 #endif
