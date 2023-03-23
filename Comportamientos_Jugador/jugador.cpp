@@ -703,6 +703,7 @@ Action ComportamientoJugador::EscapeFromZone(const Sensores &sensores){
 
 bool ComportamientoJugador::IsWall(unsigned char c){
 	return c == 'M';
+	//return c == 'M' || c == 'P';
 }
 
 Action ComportamientoJugador::Wall(const Sensores &sensores){
@@ -719,45 +720,38 @@ Action ComportamientoJugador::Wall(const Sensores &sensores){
 	}
 
 	// Comprueba si no hay muro
-	
-	//if (nextToWall==0 && CostOfPassingBy(sensores.terreno[1],NO_ENTITY)<FAR
-	//	&& CostOfPassingBy(sensores.terreno[2],NO_ENTITY)<FAR && CostOfPassingBy(sensores.terreno[3],NO_ENTITY)<FAR)
-	if (nextToWall==0 && sensores.terreno[1]!='M' && sensores.terreno[2]!='M' && sensores.terreno[3]!='M')
+	else if (nextToWall==0 && !IsWall(sensores.terreno[1]) && !IsWall(sensores.terreno[2]) && !IsWall(sensores.terreno[3]))
 		return actIDLE;
 	
-	// Si el muro está delante, gira donde no se puede pasar,
+	// Si el muro está delante, gira hacia donde se puede pasar,
 	// si no gira al lado contrario del muro que estaba recorriendo
-	
-	//if (CostOfPassingBy(sensores.terreno[2],NO_ENTITY)==FAR){
-	if (sensores.terreno[2] == 'M'){
+	else if (IsWall(sensores.terreno[2])){
 		if (CostOfPassingBy(sensores.terreno[1],NO_ENTITY) < LOW_COST)
 			return actTURN_SL;
 		else if (CostOfPassingBy(sensores.terreno[3],NO_ENTITY) < LOW_COST)
 			return actTURN_SR;
+		else if (left)
+			return (rand()%2) ? actTURN_BR : actTURN_SR;
 		else
-			return (left) ? actTURN_SR : actTURN_SL;
+			return (rand()%2) ? actTURN_BL : actTURN_SL;
 	}
 
 	// Si tiene muro a la izq y puede avanzar
-	
-	//if (CostOfPassingBy(sensores.terreno[1],NO_ENTITY)==FAR && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
-	if (sensores.terreno[1] == 'M' && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
+	else if (IsWall(sensores.terreno[1]) && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
 		nextToWall = STEPS_NUMBER;
 		left = true;
 		return actFORWARD;
 	}
 
 	// Si tiene muro a la der y puede avanzar
-	
-	//if (CostOfPassingBy(sensores.terreno[3],NO_ENTITY)==FAR && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
-	if (sensores.terreno[3] == 'M' && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
+	else if (IsWall(sensores.terreno[3]) && CostOfPassingBy(sensores.terreno[2],NO_ENTITY) < LOW_COST){
 		nextToWall = STEPS_NUMBER;
 		left = false;
 		return actFORWARD;
 	}
 
 	// Gira para entrar en el espacio abierto del muro
-	if (nextToWall == STEPS_NUMBER){
+	else if (nextToWall == STEPS_NUMBER){
 		nextToWall--;
 		return (left) ? actTURN_SL : actTURN_SR;
 	}
