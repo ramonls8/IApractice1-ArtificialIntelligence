@@ -742,7 +742,7 @@ Action ComportamientoJugador::Wall(const Sensores &sensores){
 		else if (CostOfPassingBy(sensores.terreno[3],NO_ENTITY) < LOW_COST)
 			return actTURN_SR;
 		else if (left)
-			return (rand()%2) ? actTURN_BR : actTURN_SR;
+			return (rand()%2==0) ? actTURN_BR : actTURN_SR;
 		else
 			return (rand()%2) ? actTURN_BL : actTURN_SL;
 	}
@@ -776,6 +776,7 @@ Action ComportamientoJugador::RandomAction(const Sensores &sensores){
 
 	if (CostOfAction(sensores, actFORWARD) < LOW_COST)
 		action = actFORWARD;
+
 	else{
 		int n = rand()%4;
 		switch (n){
@@ -785,6 +786,26 @@ Action ComportamientoJugador::RandomAction(const Sensores &sensores){
 			case 3:		action = actTURN_BR;	break;
 		}
 	}
+
+	/*
+	else{
+		if (rand()%2==0){
+			if (CostOfPassingBy(sensores.terreno[1],sensores.superficie[1]) < LOW_COST)
+				action = actTURN_SL;
+			else if (CostOfPassingBy(sensores.terreno[3],sensores.superficie[3]) < LOW_COST)
+				action = actTURN_SR;
+			else
+				action = (rand()%2) ? actTURN_BL : actTURN_BR;
+		}
+		else {
+			if (CostOfPassingBy(sensores.terreno[3],sensores.superficie[3]) < LOW_COST)
+				action = actTURN_SL;
+			else if (CostOfPassingBy(sensores.terreno[1],sensores.superficie[1]) < LOW_COST)
+				action = actTURN_SR;
+			else
+				action = (rand()%2) ? actTURN_BL : actTURN_BR;
+		}
+	}*/
 
 	return action;
 }
