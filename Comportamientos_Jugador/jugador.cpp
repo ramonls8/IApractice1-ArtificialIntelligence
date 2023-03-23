@@ -702,8 +702,19 @@ Action ComportamientoJugador::EscapeFromZone(const Sensores &sensores){
 }
 
 bool ComportamientoJugador::IsWall(unsigned char c){
-	return c == 'M';
-	//return c == 'M' || c == 'P';
+	if (isPrecipiceConsideredAsWall)
+		return c == 'M' || c == 'P';
+	else
+		return c == 'M';
+}
+
+void ComportamientoJugador::ConsiderPrecipiceAsWall(const Sensores &sensores){
+	const unsigned int CERTAIN_LIFE = 2500;
+
+	if (sensores.vida < CERTAIN_LIFE)
+		if (sensores.terreno[2]=='P' && sensores.terreno[3]=='P' && sensores.terreno[4]=='P'
+			&& (sensores.terreno[5]!='P' || sensores.terreno[6]!='P' || sensores.terreno[7]!='P'))
+			isPrecipiceConsideredAsWall = true;
 }
 
 Action ComportamientoJugador::Wall(const Sensores &sensores){
@@ -811,6 +822,8 @@ Action ComportamientoJugador::think(Sensores sensores){
 			actionDetermined = true;
 	}
 
+	// Comprueba si debería considerar los precipicios como muros
+	//ConsiderPrecipiceAsWall(sensores);
 	// Muros
 	if (!actionDetermined){
 		action = Wall(sensores);
@@ -839,10 +852,10 @@ Action ComportamientoJugador::think(Sensores sensores){
 		else{
 			int n = rand()%4;
 			switch (n){
-				case 0:		action = actTURN_BR;	break;
-				case 1:		action = actTURN_BL;	break;
-				case 2:		action = actTURN_SR;	break;
-				case 3:		action = actTURN_SL;	break;
+				case 0:		action = actTURN_SR;	break;
+				case 1:		action = actTURN_SL;	break;
+				case 2:		action = actTURN_BL;	break;
+				case 3:		action = actTURN_BR;	break;
 			}
 		}
 		actionDetermined = true;

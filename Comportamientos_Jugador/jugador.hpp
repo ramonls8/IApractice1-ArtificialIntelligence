@@ -42,6 +42,7 @@ class ComportamientoJugador : public Comportamiento{
     bool wearingShoes = false;
     unsigned int distanceFromWolves = FAR;
     unsigned int nextToWall = 0;
+    bool isPrecipiceConsideredAsWall = false;
 
     // Constantes
     const unsigned int LOW_COST = 20;
@@ -145,6 +146,9 @@ class ComportamientoJugador : public Comportamiento{
 
     // Devuelve si una casilla se considera un muro
     bool IsWall(unsigned char c);
+
+    // Comprueba si debería considerar los precipicios como muros
+    void ConsiderPrecipiceAsWall(const Sensores &sensores);
 
     // Devuelve una acción para recorrer y atravesar un muro
     Action Wall(const Sensores &sensores);
