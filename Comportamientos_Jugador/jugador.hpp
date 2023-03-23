@@ -152,6 +152,9 @@ class ComportamientoJugador : public Comportamiento{
 
     // Devuelve una acción para recorrer y atravesar un muro
     Action Wall(const Sensores &sensores);
+
+    // Devuelve actFORWARD si puede pasar y si no un giro aleatorio
+    Action RandomAction(const Sensores &sensores);
 };
 
 #endif

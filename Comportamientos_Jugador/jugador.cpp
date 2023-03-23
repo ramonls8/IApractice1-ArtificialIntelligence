@@ -771,6 +771,24 @@ Action ComportamientoJugador::Wall(const Sensores &sensores){
 	return (rand()%2) ? actTURN_BL : actTURN_BR;
 }
 
+Action ComportamientoJugador::RandomAction(const Sensores &sensores){
+	Action action;
+
+	if (CostOfAction(sensores, actFORWARD) < LOW_COST)
+		action = actFORWARD;
+	else{
+		int n = rand()%4;
+		switch (n){
+			case 0:		action = actTURN_SR;	break;
+			case 1:		action = actTURN_SL;	break;
+			case 2:		action = actTURN_BL;	break;
+			case 3:		action = actTURN_BR;	break;
+		}
+	}
+
+	return action;
+}
+
 //////////////////////////////////////////////////////////
 // Métodos públicos
 //////////////////////////////////////////////////////////
@@ -841,23 +859,13 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Busca lugares del mapa sin descubrir
 	if (!actionDetermined){
-
+		// ...Sin implementar
 	}
 	
 
 	// Decisión aleatoria
 	if (!actionDetermined){
-		if (CostOfAction(sensores, actFORWARD) < LOW_COST)
-			action = actFORWARD;
-		else{
-			int n = rand()%4;
-			switch (n){
-				case 0:		action = actTURN_SR;	break;
-				case 1:		action = actTURN_SL;	break;
-				case 2:		action = actTURN_BL;	break;
-				case 3:		action = actTURN_BR;	break;
-			}
-		}
+		action = RandomAction(sensores);
 		actionDetermined = true;
 	}
 	
