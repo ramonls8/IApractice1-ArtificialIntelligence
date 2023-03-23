@@ -42,19 +42,11 @@ class ComportamientoJugador : public Comportamiento{
     bool wearingShoes = false;
     // A partir de cierto nº no se considera como peligro
     unsigned int distanceFromWolves = FAR;
-    /*
-    // Variables para localizar determinadas casillas
-    set<pair<unsigned int, unsigned int>> locatedPositioning;
-    set<pair<unsigned int, unsigned int>> locatedBikinis;
-    set<pair<unsigned int, unsigned int>> locatedShoes;
-    set<pair<unsigned int, unsigned int>> locatedRecharges;
-    */
 
     // Constantes
     const unsigned int LOW_COST = 20;
     const unsigned int MAX_BATTERY = 5000;
-    const unsigned int LOW_BATTERY = 700;
-    const unsigned int LOW_LIFE = 500;
+    const unsigned int LOW_BATTERY = 1000;
     const unsigned int FAR = 99999;
     const int INVALID_POS = -1;
     const pair<int,int> INVALID_PLACE = {-1,-1};
@@ -125,12 +117,6 @@ class ComportamientoJugador : public Comportamiento{
     // no hay que escapar
     Action EscapeFromWolves(const Sensores &sensores);
 
-    /*
-    // Actualiza los objetos localizados a partir de mapaResultado si está bien ubicado,
-    // solo las 49 casillas más cercanas o todo el mapa
-    void UpdateLocatedObjects(bool fullMap);
-    */
-
 
     // Devuelve la prioridad para conseguir un objeto, sin tener en cuenta la distancia
     unsigned int PriorityOf(const Sensores & sensores, unsigned char c);
@@ -149,6 +135,12 @@ class ComportamientoJugador : public Comportamiento{
     // actIDLE si no hay un lugar necesario al que ir.
     Action MoveToBestObjectInMap(const Sensores &sensores);
 
+
+    // Devuelve si está atrapado en una zona de agua o bosque.
+    bool IsTrapped(const Sensores &sensores);
+
+    // Devuelve una acción para escapar de una zona de agua o bosque.
+    Action EscapeFromZone(const Sensores &sensores);
 };
 
 #endif

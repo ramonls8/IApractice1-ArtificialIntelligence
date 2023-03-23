@@ -476,10 +476,10 @@ bool ComportamientoJugador::WorthLiving(const Sensores &sensores){
 bool ComportamientoJugador::Recharge(const Sensores &sensores){
 	// Nº de veces que la vida batería debe ser mayor que la vida para dejar
 	// de esperar en esta casilla
-	unsigned int c = 3;
+	const unsigned int C = 3;
 
 	if (sensores.terreno[0] == 'X')
-		if (sensores.bateria < sensores.vida * c && sensores.bateria < MAX_BATTERY)
+		if (sensores.bateria < sensores.vida * C && sensores.bateria < MAX_BATTERY)
 			return true;
 	
 	return false;
@@ -514,52 +514,8 @@ Action ComportamientoJugador::EscapeFromWolves(const Sensores &sensores){
 	return action;
 }
 
-/*
-void ComportamientoJugador::UpdateLocatedObjects(bool fullMap){
-	// Comprueba que la posición del jugador es válida para mapaResultado
-	if (!wellLocated)
-		return;
-
-	int firstRow, lastRow, firstCol, lastCol;
-	int size = mapaResultado.size();
-
-	// Actualiza las 49 casillas más cercanas
-	if (!fullMap){
-		firstRow = st.fil-3;
-		lastRow = st.fil+3;
-		firstCol = st.col-3;
-		lastCol = st.col+3;
-
-		// Evitamos salir del mapa
-		if (firstRow<0)		firstRow = 0;
-		if (firstCol<0)		firstCol = 0;
-		if (lastRow>size-1)	lastRow = size-1;
-		if (lastCol>size-1)	lastCol = size-1;
-	}
-	// Actualiza todo el mapa
-	else{
-		firstRow = 0;
-		firstCol = 0;
-		lastRow = size-1;
-		lastCol = size-1;
-	}
-
-	for (unsigned int i = firstRow; i<=lastRow; i++)
-		for (unsigned int j = firstCol; j<=lastCol; j++)
-			switch (mapaResultado[i][j]){
-				case 'G':
-					locatedPositioning.insert({i,j});	break;
-				case 'K':
-					locatedBikinis.insert({i,j});		break;
-				case 'D':
-					locatedShoes.insert({i,j});			break;
-				case 'X':
-					locatedRecharges.insert({i,j});		break;
-			}
-}
-*/
-
 unsigned int ComportamientoJugador::PriorityOf(const Sensores & sensores, unsigned char c){
+	const unsigned int C = 2;
 	// Devuelve la prioridad para conseguir un objeto, sin tener en cuenta la distancia
 	unsigned int priority;
 
@@ -574,7 +530,7 @@ unsigned int ComportamientoJugador::PriorityOf(const Sensores & sensores, unsign
 			priority = (wearingShoes) ? FAR : 2;
 			break;
 		case 'X':	// Recarga
-			priority = (sensores.bateria<LOW_BATTERY && sensores.vida>LOW_LIFE) ? 2 : FAR;
+			priority = (sensores.bateria<LOW_BATTERY && sensores.bateria<C*sensores.vida) ? 2 : FAR;
 			break;
 		default:	// Otros
 			priority = FAR;
@@ -633,13 +589,42 @@ pair<int,int> ComportamientoJugador::PriotityObjectInMap(const Sensores &sensore
 
 Action ComportamientoJugador::MoveToBestObjectInView(const Sensores &sensores){
 	int obj = PriotityObjectInView(sensores);
+	Action action = actIDLE;
 
 	// Comprueba que hay un objeto al que ir
-	if (obj == INVALID_POS)
+	if (obj == INVALID_POS || obj == 0)
 		return actIDLE;
 	
-	// corregir --------------------------------------------------------------------------------------------------------------------------------
-	return actFORWARD;
+	// Comprueba donde está el objeto
+	switch (obj){
+		// Parte izquierda
+		case 1: case 4: case 9:
+			action = actTURN_SL;
+			break;
+		// Parte derecha
+		case 3: case 8: case 15:
+			action = actTURN_SR;
+			break;
+		// Frente
+		default:
+			action = actFORWARD;
+			break;
+	}
+
+	// Si no puede girar, intenta avanzar
+	if (action==actTURN_SL)
+		if (!(CostOfAction(sensores, action) < LOW_COST && CostOfPassingBy(sensores.terreno[1],NO_ENTITY) < LOW_COST))
+			action = actFORWARD;
+	
+	if (action==actTURN_SR)
+		if (!(CostOfAction(sensores, action) < LOW_COST && CostOfPassingBy(sensores.terreno[3],NO_ENTITY) < LOW_COST))
+			action = actFORWARD;
+	
+	// Comprueba si puede avanzar
+	if (!(CostOfAction(sensores, action) < LOW_COST))
+		action = actIDLE;
+
+	return action;
 }
 
 Action ComportamientoJugador::MoveToBestObjectInMap(const Sensores &sensores){
@@ -648,9 +633,46 @@ Action ComportamientoJugador::MoveToBestObjectInMap(const Sensores &sensores){
 	// Comprueba que hay un objeto al que ir
 	if (obj == INVALID_PLACE)
 		return actIDLE;
-	
-	// corregir --------------------------------------------------------------------------------------------------------------------------------
-	return actFORWARD;
+
+	// Gira si obj está en otro lado o avanza si está lejos y enfrente. Debe comprobar
+	// que puede ir hasta él en la línea recta aproximada que los conecta por el mapa
+
+	// ------ Método sin implementar, puede que no sea necesario ------
+
+	return actIDLE;
+}
+
+
+bool ComportamientoJugador::IsTrapped(const Sensores &sensores){
+
+}
+
+Action ComportamientoJugador::EscapeFromZone(const Sensores &sensores){
+	// Tiempo que lleva en la misma posición
+	static pair<int, int> place = INVALID_PLACE;
+	static int timeInSamePlace = 0;
+
+
+	// Actualiza la posición y el tiempo que lleva en ella
+	pair<int, int> newPlace = {st.fil, st.col};
+	if (place == newPlace)
+		timeInSamePlace++;
+	else{
+		place = newPlace;
+		timeInSamePlace = 0;
+	}
+
+	// Rotaciones y máximo de veces que lo hará
+	Action rotate = actTURN_BR;
+	const unsigned int MAXTIME = 3;
+
+	// Si ha pasado el límite de rotaciones en la misma casilla, intenta avanzar aunque tenga coste alto
+	if (timeInSamePlace > MAXTIME && CostOfAction(sensores, actFORWARD) < FAR)
+		return actFORWARD;
+	// Si no ha pasado el límite de rotaciones, intenta rotar con coste bajo
+	if (CostOfAction(sensores, rotate) < LOW_COST && timeInSamePlace < MAXTIME)
+		return rotate;
+	if ()
 }
 
 //////////////////////////////////////////////////////////
@@ -662,6 +684,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Crea la acción
 	Action action = actIDLE;
+	bool actionDetermined = false;
 
 	// Actualizar estado
 	UpdateState(sensores);
@@ -684,28 +707,52 @@ Action ComportamientoJugador::think(Sensores sensores){
 	// Escapa de los lobos
 	action = EscapeFromWolves(sensores);
 	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST)
-		return action;
+		actionDetermined = true;
 	
 	// Espera en casilla de recarga
-	if (Recharge(sensores))
-		return actIDLE;
+	if (!actionDetermined)
+		if (Recharge(sensores)){
+			action = actIDLE;
+			actionDetermined = true;
+		}
+			
 
 	// Busca el objeto más prioritario en la vista, y si no ve nada, en el mapa
-	action = MoveToBestObjectInView(sensores);
-	if (wellLocated && action==actIDLE)
-		action = MoveToBestObjectInMap(sensores);
+	if (!actionDetermined){
+		action = MoveToBestObjectInView(sensores);
+		//if (wellLocated && action==actIDLE)
+		//	action = MoveToBestObjectInMap(sensores);
+		if (action != actIDLE)
+			actionDetermined = true;
+	}
 
-	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST)
-		return action;																		// corregir, puede que sea mejor hacerlo dentro de las funciones
+	// Muros
+	if (!actionDetermined){
 
+	}
+
+	// Si está atrapado en bosque o agua sin objetos, intenta salir
+	if (!actionDetermined && IsTrapped(sensores)){
+		action = EscapeFromZone(sensores);
+		if (action != actIDLE)
+			actionDetermined = true;
+	}
+
+	// Busca lugares del mapa sin descubrir
+	if (!actionDetermined){
+
+	}
 	
 
-	// Decisión sencilla temporal
-	if (CostOfAction(sensores, actFORWARD) < LOW_COST){
-		action = actFORWARD;
-	} else{
-		if (rand()%2==0)	action = actTURN_BR;
-		else				action = actTURN_BL;
+	// Decisión sencilla
+	if (!actionDetermined){
+		if (CostOfAction(sensores, actFORWARD) < LOW_COST)
+			action = actFORWARD;
+		else{
+			if (rand()%2==0)	action = actTURN_BR;
+			else				action = actTURN_BL;
+		}
+		actionDetermined = true;
 	}
 	
 
