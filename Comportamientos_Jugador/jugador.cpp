@@ -644,13 +644,13 @@ Action ComportamientoJugador::MoveToBestObjectInMap(const Sensores &sensores){
 
 
 bool ComportamientoJugador::IsTrapped(const Sensores &sensores){
-
+	return CostOfPassingBy(sensores.terreno[2], NO_ENTITY) > LOW_COST;
 }
 
 Action ComportamientoJugador::EscapeFromZone(const Sensores &sensores){
 	// Tiempo que lleva en la misma posición
 	static pair<int, int> place = INVALID_PLACE;
-	static int timeInSamePlace = 0;
+	static int timeInSamePlace = 1;
 
 
 	// Actualiza la posición y el tiempo que lleva en ella
@@ -659,20 +659,43 @@ Action ComportamientoJugador::EscapeFromZone(const Sensores &sensores){
 		timeInSamePlace++;
 	else{
 		place = newPlace;
-		timeInSamePlace = 0;
+		timeInSamePlace = 1;
 	}
 
 	// Rotaciones y máximo de veces que lo hará
 	Action rotate = actTURN_BR;
 	const unsigned int MAXTIME = 3;
 
+/*
+	// Intenta pasar por la izq o la der
+	if (CostOfPassingBy(sensores.terreno[1],NO_ENTITY) < LOW_COST)
+		return actTURN_SL;
+	if (CostOfPassingBy(sensores.terreno[3],NO_ENTITY) < LOW_COST)
+		return actTURN_SR;
+*/
 	// Si ha pasado el límite de rotaciones en la misma casilla, intenta avanzar aunque tenga coste alto
 	if (timeInSamePlace > MAXTIME && CostOfAction(sensores, actFORWARD) < FAR)
 		return actFORWARD;
+
 	// Si no ha pasado el límite de rotaciones, intenta rotar con coste bajo
 	if (CostOfAction(sensores, rotate) < LOW_COST && timeInSamePlace < MAXTIME)
 		return rotate;
-	if ()
+	
+	// Intenta salir si hay salida tras atravesar una zona con alto coste
+	if (CostOfPassingBy(sensores.terreno[5], NO_ENTITY) < LOW_COST ||
+		CostOfPassingBy(sensores.terreno[6], NO_ENTITY) < LOW_COST ||
+		CostOfPassingBy(sensores.terreno[7], NO_ENTITY) < LOW_COST)
+		return actFORWARD;
+	
+	// Intenta salir si hay salida tras atravesar dos zonas con alto coste
+	if ((CostOfPassingBy(sensores.terreno[11], NO_ENTITY) < LOW_COST ||
+		CostOfPassingBy(sensores.terreno[12], NO_ENTITY) < LOW_COST ||
+		CostOfPassingBy(sensores.terreno[13], NO_ENTITY) < LOW_COST) &&
+		CostOfPassingBy(sensores.terreno[6], NO_ENTITY) < FAR)
+		return actFORWARD;
+	
+	// En otro caso, intenta rotar aunque tenga coste alto
+	return rotate;
 }
 
 //////////////////////////////////////////////////////////
@@ -734,8 +757,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 	// Si está atrapado en bosque o agua sin objetos, intenta salir
 	if (!actionDetermined && IsTrapped(sensores)){
 		action = EscapeFromZone(sensores);
-		if (action != actIDLE)
-			actionDetermined = true;
+		actionDetermined = true;
 	}
 
 	// Busca lugares del mapa sin descubrir
@@ -744,13 +766,18 @@ Action ComportamientoJugador::think(Sensores sensores){
 	}
 	
 
-	// Decisión sencilla
+	// Decisión aleatoria
 	if (!actionDetermined){
 		if (CostOfAction(sensores, actFORWARD) < LOW_COST)
 			action = actFORWARD;
 		else{
-			if (rand()%2==0)	action = actTURN_BR;
-			else				action = actTURN_BL;
+			int n = rand()%4;
+			switch (n){
+				case 0:		action = actTURN_BR;	break;
+				case 1:		action = actTURN_BL;	break;
+				case 2:		action = actTURN_SR;	break;
+				case 3:		action = actTURN_SL;	break;
+			}
 		}
 		actionDetermined = true;
 	}
@@ -758,6 +785,10 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 
 	////// FILANIZACIÓN //////
+
+	// Si hay una entidad delante y quiere avanzar, no podrá
+	if (action==actFORWARD && sensores.superficie[2]!=NO_ENTITY)
+		action = actIDLE;
 
 	// Recordar la última acción
 	last_action = action;

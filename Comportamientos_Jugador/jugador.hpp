@@ -140,6 +140,7 @@ class ComportamientoJugador : public Comportamiento{
     bool IsTrapped(const Sensores &sensores);
 
     // Devuelve una acción para escapar de una zona de agua o bosque.
+    // Llamar a la función solo si está atrapado.
     Action EscapeFromZone(const Sensores &sensores);
 };
 
