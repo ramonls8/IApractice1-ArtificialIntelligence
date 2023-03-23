@@ -323,15 +323,17 @@ void ComportamientoJugador::TransferMap(const Sensores &sensores){
 	// es la orientación por defecto de la brújula
 }
 
+/*
 bool ComportamientoJugador::CanMoveForward(const Sensores &sensores){
 	bool canMoveForward = true;
 
 	if (sensores.terreno[2] == 'P' || sensores.terreno[2] == 'M' ||
-		sensores.superficie[2] != '_')
+		sensores.superficie[2] != NO_ENTITY)
 		canMoveForward = false;
 
 	return canMoveForward;
 }
+*/
 
 bool ComportamientoJugador::IsCharacter(unsigned char c){
 	// Comprueba si la letra es minúscula
@@ -385,27 +387,43 @@ unsigned int ComportamientoJugador::DintaceInMapFromPlace(unsigned int row, unsi
 	return distance;
 }
 
+int ComportamientoJugador::CostOfPassingBy(unsigned char terrain, unsigned char surface){
+	int cost = 1;
+
+	// Si hay una entidad no puede pasar
+	if (surface != NO_ENTITY)
+		return FAR;
+
+	// Calcula cuanta batería perdería debido al terreno
+	switch (terrain){
+		case 'A':
+			if (wearingBikini)	cost = 10;
+			else				cost = 200;
+			break;
+		case 'B':
+			if (wearingShoes)	cost = 15;
+			else				cost = 100;
+			break;
+		case 'T':
+			cost = 2;
+			break;
+		case 'M': case 'P':
+			cost = FAR;
+			break;
+		default:
+			cost = 1;
+			break;
+	}
+
+	return cost;
+}
+
 int ComportamientoJugador::CostOfAction(const Sensores &sensores, Action action){
-	int cost;
+	int cost = 1;
 
 	// Calcula cuanta batería perdería debido a la siguiente casilla
 	if (action == actFORWARD){
-		switch (sensores.terreno[2]){
-			case 'A':
-				if (wearingBikini)	cost = 10;
-				else				cost = 200;
-				break;
-			case 'B':
-				if (wearingShoes)	cost = 15;
-				else				cost = 100;
-				break;
-			case 'T':
-				cost = 2;
-				break;
-			default:
-				cost = 1;
-				break;
-		}
+		cost = CostOfPassingBy(sensores.terreno[2], sensores.superficie[2]);
 	}
 	// Calcula cuanta batería perdería con un giro de 45 º
 	else if (action==actTURN_SL || action==actTURN_SR) {
@@ -485,7 +503,7 @@ Action ComportamientoJugador::EscapeFromWolves(const Sensores &sensores){
 		}
 		// Si en el turno anterior había un lobo detrás, intenta avanzar
 		else if (distanceFromWolves < DANGEROUS_DISTANCE){
-			if (CanMoveForward(sensores))
+			if (CostOfAction(sensores, actFORWARD) < LOW_COST)
 				action = actFORWARD;
 			distanceFromWolves++;
 		}
@@ -620,8 +638,8 @@ Action ComportamientoJugador::MoveToBestObjectInView(const Sensores &sensores){
 	if (obj == INVALID_POS)
 		return actIDLE;
 	
-	return actFORWARD;
 	// corregir --------------------------------------------------------------------------------------------------------------------------------
+	return actFORWARD;
 }
 
 Action ComportamientoJugador::MoveToBestObjectInMap(const Sensores &sensores){
@@ -631,8 +649,8 @@ Action ComportamientoJugador::MoveToBestObjectInMap(const Sensores &sensores){
 	if (obj == INVALID_PLACE)
 		return actIDLE;
 	
-	return actFORWARD;
 	// corregir --------------------------------------------------------------------------------------------------------------------------------
+	return actFORWARD;
 }
 
 //////////////////////////////////////////////////////////
@@ -665,24 +683,25 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Escapa de los lobos
 	action = EscapeFromWolves(sensores);
-	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST && CanMoveForward(sensores))
+	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST)
 		return action;
 	
 	// Espera en casilla de recarga
 	if (Recharge(sensores))
 		return actIDLE;
 
-	// Busca el objeto más prioritario
-	if (wellLocated)		action = MoveToBestObjectInMap(sensores);
-	else					action = MoveToBestObjectInView(sensores);
+	// Busca el objeto más prioritario en la vista, y si no ve nada, en el mapa
+	action = MoveToBestObjectInView(sensores);
+	if (wellLocated && action==actIDLE)
+		action = MoveToBestObjectInMap(sensores);
 
-	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST && CanMoveForward(sensores))				// corregir: puede que <LOW_COST sea mejor dentro de las funciones
-		return action;
+	if (action != actIDLE && CostOfAction(sensores, action) < LOW_COST)
+		return action;																		// corregir, puede que sea mejor hacerlo dentro de las funciones
 
 	
 
 	// Decisión sencilla temporal
-	if (CanMoveForward(sensores) && CostOfAction(sensores, actFORWARD) < LOW_COST){
+	if (CostOfAction(sensores, actFORWARD) < LOW_COST){
 		action = actFORWARD;
 	} else{
 		if (rand()%2==0)	action = actTURN_BR;

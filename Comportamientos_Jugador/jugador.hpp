@@ -58,6 +58,7 @@ class ComportamientoJugador : public Comportamiento{
     const unsigned int FAR = 99999;
     const int INVALID_POS = -1;
     const pair<int,int> INVALID_PLACE = {-1,-1};
+    const unsigned char NO_ENTITY = '_';
 
 
     // Calcula y devuelve una vista del mapa para un estado concreto
@@ -99,12 +100,19 @@ class ComportamientoJugador : public Comportamiento{
     // Calcula la distancia del personaje a una posición r,c del mapa
     unsigned int DintaceInMapFromPlace(unsigned int row, unsigned int col);
 
+    /*
     // Devuelve true si puede avanzar hacia delante
     bool CanMoveForward(const Sensores &sensores);
+    */
+
+    // Calcula el coste de pasar por una casilla teniendo en cuenta el terreno y la superficie
+    // Devuelve FAR si no se puede hacer
+    int CostOfPassingBy(unsigned char terrain, unsigned char surface);
 
     // Calcula el coste que tendrá una acción en el futuro o en este turno,
     // es decir, si se mueve, el coste de la casilla donde llegue, si gira,
     // el coste de girar en la casilla en la que lo hace
+    // Devuelve FAR si no se puede hacer
     int CostOfAction(const Sensores &sensores, Action action);
 
     // Espera en la casilla de recarga para conseguir batería
