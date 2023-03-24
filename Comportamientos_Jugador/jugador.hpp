@@ -17,6 +17,7 @@ class ComportamientoJugador : public Comportamiento{
       
       ResetState(size);
       last_action = actIDLE;
+      unknownMapElements = size*size;
 
       // Crea el mapa auxiliar con suficientes casillas para no salirse
       // nunca de él, aunque no sepamos nuestra posición en el mapa
@@ -43,11 +44,12 @@ class ComportamientoJugador : public Comportamiento{
     unsigned int distanceFromWolves = FAR;
     unsigned int nextToWall = 0;
     bool isPrecipiceConsideredAsWall = false;
+    unsigned int unknownMapElements;
 
     // Constantes
     const unsigned int LOW_COST = 20;
     const unsigned int MAX_BATTERY = 5000;
-    const unsigned int LOW_BATTERY = 1000;
+    const unsigned int LOW_BATTERY = 1500;
     const unsigned int FAR = 99999;
     const int INVALID_POS = -1;
     const pair<int,int> INVALID_PLACE = {-1,-1};
@@ -75,6 +77,9 @@ class ComportamientoJugador : public Comportamiento{
 
     // Actualiza state tras la última acción
     void UpdateState(const Sensores &sensores);
+
+    // Actualiza el nº de elementos desconocidos del mapa
+    void UpdateUnknownMapElements();
 
     // Pasa los datos del mapa temporal al mapa resultado cuando
     // el personaje se ubica
@@ -155,6 +160,23 @@ class ComportamientoJugador : public Comportamiento{
 
     // Devuelve actFORWARD si puede pasar y si no un giro aleatorio
     Action RandomAction(const Sensores &sensores);
+
+
+    // Devuelve la casilla sin descubrir más cercana
+    pair<int,int> ClosestUnknownPlace(vector<vector<unsigned char>> &map);
+
+    // Devuelve la orientación para ir a una casilla
+    Orientacion OrientationToGoTo(pair <int,int> place);
+
+    // Devuelve true si las orientaciones son iguales o adyacentes.
+    // Se pueden pasar como parámetros valores negativos de hasta -7.
+    bool IsOrientationSimilar(int o1, int o2);
+
+    // Devuelve una acción para ir a una orientación o alrededores si puede pasar
+    Action GoToApproxOrientation(const Sensores &sensores, Orientacion ori, vector<vector<unsigned char>> &map);
+
+    // Devuelve una acción para ir a zonas cercanas sin descubrir.
+    Action GoToUnknownPlace(const Sensores &sensores, vector<vector<unsigned char>> &map);
 };
 
 #endif

@@ -202,6 +202,10 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 		cout << sensores.superficie[i];
 	cout << endl;
 
+	static const unsigned int MAP_ELEMENTS = mapaResultado.size() * mapaResultado.size();
+	cout << "Casillas por descubrir: " << unknownMapElements
+		 << " de " << MAP_ELEMENTS << endl;
+
 	cout << endl;
 }
 
@@ -304,6 +308,22 @@ void ComportamientoJugador::UpdateState(const Sensores &sensores){
 		wellLocated = true;
 	}
 	*/
+}
+
+void ComportamientoJugador::UpdateUnknownMapElements(){
+	// Solo actualiza si está bien ubicado
+	if (!wellLocated)
+		return;
+	
+	unsigned int size = mapaResultado.size();
+	unsigned int n=0;
+
+	for (unsigned int i=0; i<size; i++)
+		for (unsigned int j=0; j<size; j++)
+			if (mapaResultado[i][j] == '?')
+				n++;
+	
+	unknownMapElements = n;
 }
 
 void ComportamientoJugador::TransferMap(const Sensores &sensores){
@@ -787,9 +807,11 @@ Action ComportamientoJugador::RandomAction(const Sensores &sensores){
 		}
 	}
 
-	/*
+/*
 	else{
-		if (rand()%2==0){
+		if (rand()%2 == 1)
+			action = (rand()%2) ? actTURN_BL : actTURN_BR;
+		else if (rand()%2){
 			if (CostOfPassingBy(sensores.terreno[1],sensores.superficie[1]) < LOW_COST)
 				action = actTURN_SL;
 			else if (CostOfPassingBy(sensores.terreno[3],sensores.superficie[3]) < LOW_COST)
@@ -805,7 +827,131 @@ Action ComportamientoJugador::RandomAction(const Sensores &sensores){
 			else
 				action = (rand()%2) ? actTURN_BL : actTURN_BR;
 		}
-	}*/
+	}
+*/
+	return action;
+}
+
+
+pair<int,int> ComportamientoJugador::ClosestUnknownPlace(vector<vector<unsigned char>> &map){
+	// Lugar más cercano
+	pair<int,int> closestPlace;
+	unsigned int closestDistance = FAR;
+	
+	unsigned int size = map.size();
+
+	for (unsigned int i=0; i<size; i++)
+		for (unsigned int j=0; j<size; j++)
+			if (map[i][j] == '?'){
+				unsigned int newDistance = DintaceInMapFromPlace(i,j);
+				if (newDistance < closestDistance){
+					closestDistance = newDistance;
+					closestPlace = {i,j};
+				}
+			}
+	
+	return closestPlace;
+}
+
+Orientacion ComportamientoJugador::OrientationToGoTo(pair <int,int> place){
+	Orientacion o;
+
+	int i = place.first, j = place.second;
+
+	if      (i< st.fil && j< st.col)		o = noroeste;
+	else if (i< st.fil && j==st.col)		o = norte;
+	else if (i< st.fil && j> st.col)		o = noreste;
+	else if (i==st.fil && j< st.col)		o = oeste;
+	else if (i==st.fil && j> st.col)		o = este;
+	else if (i> st.fil && j< st.col)		o = suroeste;
+	else if (i> st.fil && j==st.col)		o = sur;
+	else if (i> st.fil && j> st.col)		o = sureste;
+	
+	return o;
+}
+
+bool ComportamientoJugador::IsOrientationSimilar(int o1, int o2){
+	const unsigned int numOri = sizeof(Orientacion);
+	bool isOrientationSimilar = false;
+
+	if ((o1+numOri)%numOri == (o2+numOri-1)%numOri ||
+		(o1+numOri)%numOri == (o2+numOri  )%numOri ||
+		(o1+numOri)%numOri == (o2+numOri+1)%numOri)
+		isOrientationSimilar = true;
+
+	return isOrientationSimilar;
+}
+
+Action ComportamientoJugador::GoToApproxOrientation(const Sensores &sensores, Orientacion ori, vector<vector<unsigned char>> &map){
+	Action action = actIDLE;
+
+	// Tiene dirección aproximada buena
+	if (IsOrientationSimilar(ori, st.brujula)){
+		// Si puede avanzar y el objeto está delante, avanza
+		if (CostOfAction(sensores, actFORWARD)<LOW_COST && ori==st.brujula)
+			action = actFORWARD;
+		else{
+			// Intenta ir a la izq, si no a la der
+			if (rand()%2){
+				if (CostOfPassingBy(sensores.superficie[1],NO_ENTITY)<LOW_COST && IsOrientationSimilar(ori, st.brujula-1) && last_action != actTURN_SR)
+					action = actTURN_SL;
+				else if (CostOfPassingBy(sensores.superficie[3],NO_ENTITY)<LOW_COST && IsOrientationSimilar(ori, st.brujula+1) && last_action != actTURN_SL)
+					action = actTURN_SR;
+			}
+			// Intenta ir a la der, si no a la izq
+			else {
+				if (CostOfPassingBy(sensores.superficie[3],NO_ENTITY)<LOW_COST && IsOrientationSimilar(ori, st.brujula+1) && last_action != actTURN_SL)
+					action = actTURN_SR;
+				else if (CostOfPassingBy(sensores.superficie[1],NO_ENTITY)<LOW_COST && IsOrientationSimilar(ori, st.brujula-1) && last_action != actTURN_SR)
+					action = actTURN_SL;
+			}
+		}
+	}
+	// No tiene orientación aproximada buena, gira donde la orientación sea buena
+	else {
+		if (CostOfPassingBy(sensores.superficie[1],NO_ENTITY)<LOW_COST && IsOrientationSimilar(ori, st.brujula-1))
+			action = actTURN_SL;
+		else if (CostOfPassingBy(sensores.superficie[3],NO_ENTITY)<LOW_COST && IsOrientationSimilar(ori, st.brujula+1))
+			action = actTURN_SR;
+		else if (IsOrientationSimilar(ori, st.brujula-3))
+			action = actTURN_BL;
+		else if (IsOrientationSimilar(ori, st.brujula+3))
+			action = actTURN_BR;
+	}
+		
+
+	return action;
+}
+
+Action ComportamientoJugador::GoToUnknownPlace(const Sensores &sensores, vector<vector<unsigned char>> &map){
+	// Máximo de elementos del mapa desconocidos para empezar a buscar
+	static const unsigned int MAX_UNK_EL = mapaResultado.size() * mapaResultado.size() * 0.25;
+
+	// Valores para evitar bucles:
+	// Iteraciones que descansará tras llegar al límite de veces usado
+	static const unsigned int WAIT_ITERS = 10;
+	// Límite de veces que puede actuar este método antes de entrar en espera
+	static const unsigned int MAX_ITERS = 7;
+	// Hasta cuándo debe descansar. Empieza a funcionar a partir de cierto momento de la partida.
+	static unsigned int waitUntilLife = FAR;
+	// Iteraciones que lleva sin descansar
+	static unsigned int iters = 0;
+
+	// No puede ejecutarse en estos casos
+	if (sensores.vida > waitUntilLife || !wellLocated || unknownMapElements > MAX_UNK_EL)
+		return actIDLE;
+	
+	
+	// Va al lugar sin descubrir más cercano
+	Action action = GoToApproxOrientation(sensores, OrientationToGoTo(ClosestUnknownPlace(map)), map);
+
+
+	// Actualiza el nº de iteraciones, en la siguiente esperará si ha llegado al límite
+	iters++;
+	if (iters >= MAX_ITERS){
+		iters = 0;
+		waitUntilLife = sensores.vida - WAIT_ITERS;
+	}
 
 	return action;
 }
@@ -823,6 +969,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Actualizar estado
 	UpdateState(sensores);
+	UpdateUnknownMapElements();
 
 	// Info debug
 	ShowInfo(sensores);
@@ -880,7 +1027,9 @@ Action ComportamientoJugador::think(Sensores sensores){
 
 	// Busca lugares del mapa sin descubrir
 	if (!actionDetermined){
-		// ...Sin implementar
+		action = GoToUnknownPlace(sensores, *map);
+		if (action != actIDLE)
+			actionDetermined = true;
 	}
 	
 
