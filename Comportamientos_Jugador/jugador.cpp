@@ -190,6 +190,7 @@ void ComportamientoJugador::ShowInfo(const Sensores &sensores){
 	cout << "Colisión: " << sensores.colision << "    ";
 	cout << "Reset: " << sensores.reset << "    ";
 	cout << "Vida: " << sensores.vida << "    ";
+	cout << "Batería: " << sensores.bateria << "    ";
 	cout << "Última acción: " << last_action << endl;
 
 	cout << "Terreno:    ";
@@ -729,12 +730,21 @@ bool ComportamientoJugador::IsWall(unsigned char c){
 }
 
 void ComportamientoJugador::ConsiderPrecipiceAsWall(const Sensores &sensores){
-	const unsigned int CERTAIN_LIFE = 2500;
+	// Nº de veces que se ha dado la situación
+	static unsigned int times = 0;
+/*
+	if (sensores.terreno[1]=='P' && sensores.terreno[2]=='P' && sensores.terreno[3]=='P'
+		&& (sensores.terreno[5]!='P' || sensores.terreno[6]!='P' || sensores.terreno[7]!='P'))
+		times++;
+*/
 
-	if (sensores.vida < CERTAIN_LIFE)
-		if (sensores.terreno[2]=='P' && sensores.terreno[3]=='P' && sensores.terreno[4]=='P'
-			&& (sensores.terreno[5]!='P' || sensores.terreno[6]!='P' || sensores.terreno[7]!='P'))
-			isPrecipiceConsideredAsWall = true;
+	if ((sensores.terreno[1]=='P' && sensores.terreno[5]!='P') ||
+		(sensores.terreno[2]=='P' && sensores.terreno[6]!='P') ||
+		(sensores.terreno[3]=='P' && sensores.terreno[7]!='P'))
+		times++;
+	
+	if (times > 5)
+		isPrecipiceConsideredAsWall = true;
 }
 
 Action ComportamientoJugador::Wall(const Sensores &sensores){
@@ -1002,14 +1012,14 @@ Action ComportamientoJugador::think(Sensores sensores){
 	// Busca el objeto más prioritario en la vista, y si no ve nada, en el mapa
 	if (!actionDetermined){
 		action = MoveToBestObjectInView(sensores);
-		//if (wellLocated && action==actIDLE)
-		//	action = MoveToBestObjectInMap(sensores);
+		/*if (wellLocated && action==actIDLE)
+			action = MoveToBestObjectInMap(sensores);*/
 		if (action != actIDLE)
 			actionDetermined = true;
 	}
 
 	// Comprueba si debería considerar los precipicios como muros
-	//ConsiderPrecipiceAsWall(sensores);
+	/*ConsiderPrecipiceAsWall(sensores);*/
 	// Muros
 	if (!actionDetermined){
 		action = Wall(sensores);
