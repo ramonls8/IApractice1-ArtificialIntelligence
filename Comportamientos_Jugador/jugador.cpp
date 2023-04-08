@@ -1,3 +1,5 @@
+// Ramón Liria Sánchez
+
 #include "../Comportamientos_Jugador/jugador.hpp"
 #include <iostream>
 using namespace std;

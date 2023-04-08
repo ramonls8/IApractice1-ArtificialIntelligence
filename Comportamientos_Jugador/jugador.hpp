@@ -1,3 +1,5 @@
+// Ramón Liria Sánchez
+
 #ifndef COMPORTAMIENTOJUGADOR_H
 #define COMPORTAMIENTOJUGADOR_H
 
