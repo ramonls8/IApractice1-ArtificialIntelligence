@@ -1068,4 +1068,3 @@ int ComportamientoJugador::interact(Action accion, int valor){
   return false;
 }
 
- 
