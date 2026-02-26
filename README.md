@@ -4,13 +4,13 @@ Practice 1 of the Inteligencia Artificial (Artificial Intelligence) course in th
 
 The objective of this practice is to guide a reactive agent on a 2D map with obstacles and different terrains, in order to discover as much area of the map as possible, which is initially unknown.
 
-<img src="./README_FILES/MapUndiscovered.png" style="width: 30%;">
+<img src="./README_FILES/MapUndiscovered.png" style="width: 35%;">
 
-<img src="./README_FILES/MapDiscovered.png" style="width: 30%;">
+<img src="./README_FILES/MapDiscovered.png" style="width: 35%;">
 
-<img src="./README_FILES/MapWithLegend.png" style="width: 50%;">
+<img src="./README_FILES/MapWithLegend.png" style="width: 55%;">
 
-<img src="./README_FILES/MapInsideGameScreen.png" style="width: 50%;">
+<img src="./README_FILES/MapInsideGameScreen.png" style="width: 55%;">
 
 ## How to run it
 
